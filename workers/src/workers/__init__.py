@@ -1,1 +1,2 @@
-"""CloudRAG worker package scaffold."""
+"""CloudRAG worker package."""
+

@@ -14,10 +14,10 @@ The system will utilize a highly decoupled polyglot architecture to maximize eff
   - Framework: Hono, using `@hono/node-server` locally and Hono-compatible runtimes later.
 - **Processing / Worker Layer (Python):**
   - Dedicated to intensive NLP tasks, document chunking, embedding generation, and LLM orchestration.
-  - Libraries: Celery, Pydantic, LiteLLM embeddings, Qdrant client, and light LangChain utilities when useful.
+  - Libraries: BullMQ Python, Pydantic, LiteLLM embeddings, HTTP/Qdrant adapters, and light utilities when useful.
 - **Messaging & Queues:**
   - **Redis** acts as the central message broker to decouple services and manage bursty traffic.
-  - Libraries: BullMQ in the TypeScript gateway and Celery in the Python workers.
+  - Libraries: BullMQ in the TypeScript gateway and the official BullMQ Python package in the worker.
 - **Storage & State Management:**
   - **Vector Database:** Qdrant for dense and sparse hybrid search capabilities.
   - **Object Storage:** S3-compatible storage (MinIO for local development, AWS S3/GCP GCS for production) for raw document retention.

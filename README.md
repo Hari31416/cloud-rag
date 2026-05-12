@@ -4,7 +4,7 @@ CloudRAG is a modular, cloud-agnostic Retrieval-Augmented Generation stack with 
 
 ## Status
 
-Phase 1 (repository foundation) and Phase 2 (local infrastructure runtime) are implemented.
+Phases 1 through 5, 7, and 8 are implemented. Phase 6 frontend product work is intentionally deferred.
 
 ## Repository Structure
 
@@ -55,23 +55,41 @@ Phase 1 (repository foundation) and Phase 2 (local infrastructure runtime) are i
    just health
    ```
 
-5. Stop infrastructure:
+5. Start the backend services:
 
    ```bash
-   just down
+   just gateway-start
+   just worker-start
+   ```
+
+6. Run service tests:
+
+   ```bash
+   just gateway-test
+   just worker-test
+   ```
+
+7. Stop services and infrastructure:
+
+   ```bash
+   just stop
    ```
 
 ## Commands
 
-| Command | Purpose |
-| :-- | :-- |
-| `just up` | Start Redis, PostgreSQL, MinIO, and Qdrant |
-| `just down` | Stop infrastructure |
-| `just nuke` | Stop infrastructure and delete volumes |
-| `just ps` | Show infra state and scaffold state |
-| `just health` | Validate service health + credential checks |
-| `just setup` | Install worker/gateway/frontend dependencies |
-| `just test` | Run isolated frontend, gateway, and worker tests |
+| Command       | Purpose                                          |
+| :------------ | :----------------------------------------------- |
+| `just up`     | Start Redis, PostgreSQL, MinIO, and Qdrant       |
+| `just down`   | Stop infrastructure                              |
+| `just nuke`   | Stop infrastructure and delete volumes           |
+| `just ps`     | Show infra state and scaffold state              |
+| `just health` | Validate service health + credential checks      |
+| `just setup`  | Install worker/gateway/frontend dependencies     |
+| `just test`   | Run isolated frontend, gateway, and worker tests |
+| `just gateway-start` | Start the gateway in the background       |
+| `just worker-start` | Start the worker in the background         |
+| `just start` | Start infra, worker, gateway, and frontend        |
+| `just stop` | Stop frontend, worker, gateway, and infra         |
 
 ## Baseline Service Ports
 
@@ -84,3 +102,10 @@ Phase 1 (repository foundation) and Phase 2 (local infrastructure runtime) are i
 - Qdrant HTTP: `6333`
 
 All ports, credentials, and connection values are configurable in `.env` and documented in `.env.example`.
+
+## Implemented Service Notes
+
+- The gateway exposes `POST /api/v1/ingest` and `POST /api/v1/query`.
+- Queue contracts are versioned and documented in [docs/contracts.md](/Users/hari/Desktop/sandbox/cloud-rag/docs/contracts.md).
+- The worker handles idempotent chunking, deterministic local embeddings by default, Qdrant hybrid retrieval, Redis semantic cache evaluation, and optional LiteLLM-backed embeddings and generation.
+- Deployment guidance and environment profiles are documented in [docs/deployment-path.md](/Users/hari/Desktop/sandbox/cloud-rag/docs/deployment-path.md).

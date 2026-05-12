@@ -24,14 +24,14 @@ This document finalizes the initial library and framework choices for CloudRAG. 
 | Gateway queue client       | BullMQ                                                       | Redis-backed async job orchestration                                          |
 | Gateway Redis client       | ioredis                                                      | Redis connectivity for BullMQ and cache adapters                              |
 | Worker runtime             | Python + uv                                                  | NLP and retrieval processing environment                                      |
-| Worker queue client        | Celery                                                       | Familiar Redis-backed Python worker execution with mature retry controls      |
+| Worker queue client        | BullMQ Python                                                | One queue protocol shared with the gateway across Node.js and Python          |
 | Worker validation/settings | Pydantic + pydantic-settings                                 | Typed configuration and payload validation                                    |
 | Worker tests               | pytest                                                       | Unit and integration testing                                                  |
 | Worker HTTP client         | httpx                                                        | Async HTTP calls for provider adapters                                        |
 | Object storage             | MinIO locally through S3-compatible APIs                     | Raw document persistence without cloud lock-in                                |
 | Object storage client      | boto3                                                        | Mature S3-compatible Python client                                            |
 | Vector database            | Qdrant locally                                               | Dense and sparse retrieval with metadata filtering                            |
-| Vector DB client           | qdrant-client                                                | Python vector upsert and retrieval operations                                 |
+| Vector DB client           | Qdrant HTTP adapter                                          | Provider-neutral vector operations behind a small repository interface         |
 | Embeddings client          | LiteLLM embeddings behind an adapter                         | Hosted embeddings with provider flexibility and minimal integration code      |
 | Retrieval utilities        | Light LangChain usage when useful                            | Use targeted utilities without adopting full orchestration                    |
 | Sparse retrieval           | Qdrant sparse vectors initially                              | Hybrid search inside the selected vector database                             |
@@ -95,17 +95,13 @@ The frontend React app should not contain backend business logic. It should call
 - `pydantic`
 - `pydantic-settings`
 - `redis`
-- `celery`
+- `bullmq`
 - `boto3`
-- `qdrant-client`
 - `litellm`
 - `httpx`
-- `tenacity`
 - `structlog`
 - `opentelemetry-api`
 - `opentelemetry-sdk`
-- `opentelemetry-instrumentation-redis`
-- `opentelemetry-instrumentation-requests`
 
 ### RAG Processing
 
@@ -127,7 +123,7 @@ The frontend React app should not contain backend business logic. It should call
 These decisions are intentionally closed for the initial implementation:
 
 - Do not adopt full LangChain or LlamaIndex orchestration. Use LangChain lightly only for focused utilities such as text splitting when it saves effort.
-- Use Celery for Python workers.
+- Use BullMQ Python for the initial worker queue path so the gateway and worker share one queue protocol.
 - Use Qdrant as the vector database. Use Qdrant sparse vector support for hybrid retrieval rather than switching to pgvector for the initial build.
 - Use TanStack Query and local React state only. Do not add a separate frontend global state library unless a later implementation issue clearly requires it.
 - Use hosted embeddings through LiteLLM embeddings behind an adapter. Keep the rest of the RAG pipeline provider-neutral.

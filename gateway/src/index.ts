@@ -1,19 +1,48 @@
 import { serve } from '@hono/node-server'
-import { Hono } from 'hono'
 
-const app = new Hono()
+import { createApp } from './app/create-app'
+import { RedisQueryCache } from './lib/cache'
+import { createLogger } from './lib/logger'
+import { BullMqQueueAdapter } from './lib/queue'
+import { createRedisConnection } from './lib/redis'
+import { startTelemetry } from './lib/telemetry'
+import { loadConfig } from './config'
 
-app.get('/health', c => c.json({ status: 'ok' }))
-app.get('/ready', c => c.json({ status: 'ready' }))
+const config = loadConfig()
+const telemetry = startTelemetry(config.OTEL_SERVICE_NAME)
+const logger = createLogger()
+const redis = createRedisConnection(config.REDIS_URL)
 
-const port = Number(process.env.GATEWAY_PORT ?? 3000)
+const queue = new BullMqQueueAdapter(redis, config.GATEWAY_QUEUE_NAME)
+const cache = new RedisQueryCache(redis)
+const app = createApp({
+  config,
+  queue,
+  cache,
+  logger,
+})
 
 serve(
   {
     fetch: app.fetch,
-    port,
+    port: config.GATEWAY_PORT,
   },
   info => {
-    console.log(`Gateway listening on http://localhost:${info.port}`)
+    logger.info(
+      {
+        port: info.port,
+        queue: config.GATEWAY_QUEUE_NAME,
+      },
+      'gateway listening',
+    )
   },
 )
+
+for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+  process.on(signal, async () => {
+    await queue.close()
+    await redis.quit()
+    await telemetry?.shutdown()
+    process.exit(0)
+  })
+}

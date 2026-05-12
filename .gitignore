@@ -6,9 +6,11 @@
 .DS_Store
 
 node_modules/
+.pnpm-store/
 dist/
 coverage/
 *.tsbuildinfo
+.run/
 
 __pycache__/
 *.py[cod]
