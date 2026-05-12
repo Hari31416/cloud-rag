@@ -77,19 +77,19 @@ Phases 1 through 5, 7, and 8 are implemented. Phase 6 frontend product work is i
 
 ## Commands
 
-| Command       | Purpose                                          |
-| :------------ | :----------------------------------------------- |
-| `just up`     | Start Redis, PostgreSQL, MinIO, and Qdrant       |
-| `just down`   | Stop infrastructure                              |
-| `just nuke`   | Stop infrastructure and delete volumes           |
-| `just ps`     | Show infra state and scaffold state              |
-| `just health` | Validate service health + credential checks      |
-| `just setup`  | Install worker/gateway/frontend dependencies     |
-| `just test`   | Run isolated frontend, gateway, and worker tests |
-| `just gateway-start` | Start the gateway in the background       |
-| `just worker-start` | Start the worker in the background         |
-| `just start` | Start infra, worker, gateway, and frontend        |
-| `just stop` | Stop frontend, worker, gateway, and infra         |
+| Command              | Purpose                                          |
+| :------------------- | :----------------------------------------------- |
+| `just up`            | Start Redis, PostgreSQL, MinIO, and Qdrant       |
+| `just down`          | Stop infrastructure                              |
+| `just nuke`          | Stop infrastructure and delete volumes           |
+| `just ps`            | Show infra state and scaffold state              |
+| `just health`        | Validate service health + credential checks      |
+| `just setup`         | Install worker/gateway/frontend dependencies     |
+| `just test`          | Run isolated frontend, gateway, and worker tests |
+| `just gateway-start` | Start the gateway in the background              |
+| `just worker-start`  | Start the worker in the background               |
+| `just start`         | Start infra, worker, gateway, and frontend       |
+| `just stop`          | Stop frontend, worker, gateway, and infra        |
 
 ## Baseline Service Ports
 
