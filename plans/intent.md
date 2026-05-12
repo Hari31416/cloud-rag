@@ -28,7 +28,7 @@ A key objective is to break the dependency on provider-specific "magic" (like AW
 
 - **Polyglot Efficiency:** TS for high-concurrency ingestion; Python for intensive NLP and data orchestration.
 - **Event-Driven Design:** Leveraging Redis-backed queues to handle bursty traffic and long-running embedding tasks.
-- **Infrastructure as Code (IaC):** Defined using cloud-neutral tools (like Terraform) to ensure the environment is as portable as the code.
+- **Deployment Portability:** Keep the application containerized and cloud-neutral first. Provider-specific infrastructure modules can be added later on separate cloud-provider branches.
 
 ## The "Non-Trivial" Promise
 

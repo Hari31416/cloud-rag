@@ -22,7 +22,7 @@ graph TD
 
     Queue -->|"Consume Task"| Worker
     Worker -->|"Raw Document Storage"| ObjectStorage["Object Storage (MinIO / S3)"]
-    Worker -->|"Upsert Embeddings"| VectorDB["Vector Database (Qdrant / pgvector)"]
+    Worker -->|"Upsert Embeddings"| VectorDB["Vector Database (Qdrant)"]
 
     Gateway -->|"Query Request (Cache Miss)"| Worker
     Worker -->|"Hybrid Search"| VectorDB
@@ -31,7 +31,7 @@ graph TD
 ### Core Components
 
 - **Frontend Layer:** Built with TypeScript, React, Vite, and `shadcn/ui` to provide an accessible, responsive, and highly polished user interface for document upload and knowledge querying.
-- **Gateway Layer:** Implemented in TypeScript/Node.js to handle incoming connections, perform initial request validation, check semantic caches, and route ingestion tasks asynchronously.
+- **Gateway Layer:** Implemented in TypeScript/Node.js with Hono to handle incoming connections, perform initial request validation, check semantic caches, and route ingestion tasks asynchronously.
 - **Worker Layer:** Implemented in Python to handle intensive computational tasks, including document parsing, chunking, embedding generation, hybrid search execution, and LLM communication.
 - **State & Storage:** Relies on cloud-agnostic containerized interfaces such as Redis for message queuing and caching, an OCI-compliant Vector Database for similarity search, and S3-compatible Object Storage for document persistence.
 
@@ -41,8 +41,8 @@ graph TD
 
 - **Intuitive User Interface:** Premium custom dashboard leveraging `shadcn/ui` and TailwindCSS for end-to-end RAG interaction and monitoring.
 - **Asynchronous Orchestration:** Leverages Redis-backed message queues to offload long-running embedding tasks, providing immediate responses to clients during document ingestion.
-- **Absolute Cloud Agnosticism:** Avoids proprietary serverless triggers or specific cloud provider implementations. Designed to deploy universally using Terraform and standard container runtimes.
-- **Hybrid Retrieval Pipeline:** Combines dense vector similarity searches with sparse keyword-based retrieval (e.g., BM25) to maximize search relevance and context precision.
+- **Absolute Cloud Agnosticism:** Avoids proprietary serverless triggers or specific cloud provider implementations. Designed to run locally first with standard container runtimes, with provider-specific deployment modules deferred to later branches.
+- **Hybrid Retrieval Pipeline:** Combines Qdrant dense vector similarity with sparse retrieval to maximize search relevance and context precision.
 - **Semantic Caching:** Reduces overall response latency and third-party LLM inference costs by caching and reusing responses for semantically equivalent user queries.
 - **Idempotent Ingestion:** Computes distinct cryptographic hashes for raw documents and segmented chunks to guarantee deduplication and prevent vector store pollution.
 - **Polyglot Observability:** Implements comprehensive distributed tracing across TypeScript and Python microservice boundaries using OpenTelemetry.
@@ -54,12 +54,12 @@ graph TD
 | Component          | Technology                     | Description                                                  |
 | :----------------- | :----------------------------- | :----------------------------------------------------------- |
 | **Frontend UI**    | TypeScript, React, Vite        | Modern client dashboard utilizing `shadcn/ui` components     |
-| **API Gateway**    | TypeScript, Node.js            | High-concurrency ingestion routing and API handling          |
-| **Worker Engine**  | Python, LangChain / LlamaIndex | Document processing, embedding generation, LLM orchestration |
+| **API Gateway**    | TypeScript, Node.js, Hono      | High-concurrency ingestion routing and API handling          |
+| **Worker Engine**  | Python, Celery, LiteLLM        | Document processing, hosted embedding generation, RAG orchestration |
 | **Message Broker** | Redis, BullMQ, Celery          | Event-driven task queuing and decoupled messaging            |
-| **Vector Store**   | Qdrant / pgvector              | High-performance similarity and hybrid search                |
+| **Vector Store**   | Qdrant                         | High-performance dense and sparse hybrid search              |
 | **Object Storage** | MinIO / S3-compatible API      | Persistent layer for raw unstructured documents              |
-| **Infrastructure** | Docker Compose, Terraform      | Local-first container orchestration and cloud-neutral IaC    |
+| **Infrastructure** | Docker Compose                 | Local-first container orchestration                          |
 
 ---
 

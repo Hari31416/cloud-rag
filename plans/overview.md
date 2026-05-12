@@ -11,15 +11,15 @@ The system will utilize a highly decoupled polyglot architecture to maximize eff
   - Framework: Vite, React, `shadcn/ui`, and TailwindCSS.
 - **API / Gateway Layer (TypeScript):**
   - Handles high-concurrency ingestion, REST/GraphQL API routing, and fast request-response cycles.
-  - Framework: Express, Fastify, or NestJS.
+  - Framework: Hono, using `@hono/node-server` locally and Hono-compatible runtimes later.
 - **Processing / Worker Layer (Python):**
   - Dedicated to intensive NLP tasks, document chunking, embedding generation, and LLM orchestration.
-  - Libraries: LangChain/LlamaIndex, FastAPI (if API required for workers), or pure background workers.
+  - Libraries: Celery, Pydantic, LiteLLM embeddings, Qdrant client, and light LangChain utilities when useful.
 - **Messaging & Queues:**
   - **Redis** acts as the central message broker to decouple services and manage bursty traffic.
-  - Libraries: BullMQ (TypeScript) and Celery/RQ (Python) for asynchronous task execution.
+  - Libraries: BullMQ in the TypeScript gateway and Celery in the Python workers.
 - **Storage & State Management:**
-  - **Vector Database:** A cloud-agnostic vector store (e.g., Qdrant, Milvus, or Postgres with pgvector) for hybrid search capabilities.
+  - **Vector Database:** Qdrant for dense and sparse hybrid search capabilities.
   - **Object Storage:** S3-compatible storage (MinIO for local development, AWS S3/GCP GCS for production) for raw document retention.
   - **Cache:** Redis for semantic caching to reduce LLM costs and latency.
 
@@ -29,7 +29,7 @@ To achieve absolute cloud agnosticism and local-first development:
 
 - **Local-First Environment:** A comprehensive `docker-compose.yml` will orchestrate the entire stack locally, including the Vite Frontend UI, TS API Gateway, Python workers, Redis, Vector DB, and MinIO.
 - **Containerization:** Standard OCI-compliant Dockerfiles for the Frontend, Gateway, and Worker microservices to ensure they run identically across environments.
-- **Infrastructure as Code (IaC):** Terraform will be used to provision resources across any major cloud provider (AWS, GCP, Azure), explicitly avoiding proprietary serverless triggers or vendor-locked databases.
+- **Deployment Path:** The initial implementation will skip provider-specific cloud modules. Future cloud deployment branches can add provider-specific OpenTofu or Terraform when the local architecture is stable.
 
 ## 3. Core Features Implementation Plan
 
@@ -45,7 +45,7 @@ To achieve absolute cloud agnosticism and local-first development:
 
 ### Advanced RAG Capabilities
 
-- **Hybrid Search:** The Python query pipeline will combine vector similarity (dense search) with keyword-based retrieval (sparse search, e.g., BM25) to improve recall.
+- **Hybrid Search:** The Python query pipeline will use Qdrant dense and sparse retrieval to improve recall.
 - **Semantic Caching:** Before forwarding a prompt to an external LLM, the system will embed the query and check the Redis cache for highly similar historical queries, returning the cached response if available.
 - **Idempotent Ingestion:** The system will calculate hashes (e.g., SHA-256) for documents and individual chunks. If a hash already exists in the metadata, the processing step is skipped to ensure data integrity.
 
