@@ -1,204 +1,86 @@
 # CloudRAG
 
-**Status: Work in Progress (WIP)**
+CloudRAG is a modular, cloud-agnostic Retrieval-Augmented Generation stack with a decoupled frontend, gateway, and worker architecture.
 
-CloudRAG is a modular, serverless, and cloud-agnostic Retrieval-Augmented Generation (RAG) orchestrator. Built with a polyglot architecture utilizing TypeScript and Python, it serves as a high-performance blueprint for deploying intelligent, data-driven services across any modern cloud provider without vendor lock-in.
+## Status
 
----
+Phase 1 (repository foundation) and Phase 2 (local infrastructure runtime) are implemented.
 
-## Architecture Overview
+## Repository Structure
 
-CloudRAG is designed around event-driven orchestration and clean separation of concerns. It decouples high-concurrency client interfaces and APIs from compute-intensive Natural Language Processing (NLP) workflows.
-
-```mermaid
-graph TD
-    Client["Frontend UI (Vite / React)"] -->|"HTTP Requests"| Gateway["TypeScript API Gateway"]
-    Gateway -->|"Check Semantic Cache"| Cache["Redis Cache"]
-    Gateway -->|"Enqueue Ingestion Task"| Queue["Redis Message Broker"]
-
-    subgraph Python Processing Layer
-        Worker["Python NLP Worker"]
-    end
-
-    Queue -->|"Consume Task"| Worker
-    Worker -->|"Raw Document Storage"| ObjectStorage["Object Storage (MinIO / S3)"]
-    Worker -->|"Upsert Embeddings"| VectorDB["Vector Database (Qdrant)"]
-
-    Gateway -->|"Query Request (Cache Miss)"| Worker
-    Worker -->|"Hybrid Search"| VectorDB
-```
-
-### Core Components
-
-- **Frontend Layer:** Built with TypeScript, React, Vite, and `shadcn/ui` to provide an accessible, responsive, and highly polished user interface for document upload and knowledge querying.
-- **Gateway Layer:** Implemented in TypeScript/Node.js with Hono to handle incoming connections, perform initial request validation, check semantic caches, and route ingestion tasks asynchronously.
-- **Worker Layer:** Implemented in Python to handle intensive computational tasks, including document parsing, chunking, embedding generation, hybrid search execution, and LLM communication.
-- **State & Storage:** Relies on cloud-agnostic containerized interfaces such as Redis for message queuing and caching, an OCI-compliant Vector Database for similarity search, and S3-compatible Object Storage for document persistence.
-
----
-
-## Key Features
-
-- **Intuitive User Interface:** Premium custom dashboard leveraging `shadcn/ui` and TailwindCSS for end-to-end RAG interaction and monitoring.
-- **Asynchronous Orchestration:** Leverages Redis-backed message queues to offload long-running embedding tasks, providing immediate responses to clients during document ingestion.
-- **Absolute Cloud Agnosticism:** Avoids proprietary serverless triggers or specific cloud provider implementations. Designed to run locally first with standard container runtimes, with provider-specific deployment modules deferred to later branches.
-- **Hybrid Retrieval Pipeline:** Combines Qdrant dense vector similarity with sparse retrieval to maximize search relevance and context precision.
-- **Semantic Caching:** Reduces overall response latency and third-party LLM inference costs by caching and reusing responses for semantically equivalent user queries.
-- **Idempotent Ingestion:** Computes distinct cryptographic hashes for raw documents and segmented chunks to guarantee deduplication and prevent vector store pollution.
-- **Polyglot Observability:** Implements comprehensive distributed tracing across TypeScript and Python microservice boundaries using OpenTelemetry.
-
----
-
-## Tech Stack
-
-| Component          | Technology                     | Description                                                  |
-| :----------------- | :----------------------------- | :----------------------------------------------------------- |
-| **Frontend UI**    | TypeScript, React, Vite        | Modern client dashboard utilizing `shadcn/ui` components     |
-| **API Gateway**    | TypeScript, Node.js, Hono      | High-concurrency ingestion routing and API handling          |
-| **Worker Engine**  | Python, Celery, LiteLLM        | Document processing, hosted embedding generation, RAG orchestration |
-| **Message Broker** | Redis, BullMQ, Celery          | Event-driven task queuing and decoupled messaging            |
-| **Vector Store**   | Qdrant                         | High-performance dense and sparse hybrid search              |
-| **Object Storage** | MinIO / S3-compatible API      | Persistent layer for raw unstructured documents              |
-| **Infrastructure** | Docker Compose                 | Local-first container orchestration                          |
-
----
-
-## Project Structure
-
-```tree
+```text
 .
-├── plans/
-│   ├── intent.md          # Original project intent, vision, and core philosophy
-│   └── overview.md        # Technical execution plan and blueprint overview
-└── README.md              # Project documentation (this file)
+├── docs/                # durable architecture and operational docs
+├── frontend/            # React + Vite frontend scaffold (TypeScript strict)
+├── gateway/             # Hono gateway scaffold (TypeScript strict)
+├── infra/               # local runtime scripts and infra docs
+├── plans/               # roadmap and phase plans
+├── workers/             # Python worker scaffold (uv + pytest)
+├── .env.example
+├── docker-compose.yml
+└── justfile
 ```
 
-> [!NOTE]  
-> Code implementation directories (`frontend/`, `gateway/`, `workers/`, `infra/`) are currently planned and will be populated as development progresses.
+## Prerequisites
 
----
+- Docker + Docker Compose
+- just
+- pnpm
+- uv
 
-## Logic Flows
+## Quickstart
 
-The following sequence diagram outlines the system's primary execution paths for both asynchronous document ingestion and low-latency hybrid retrieval.
-
-```mermaid
-sequenceDiagram
-    autonumber
-    actor Client as Frontend UI
-    participant Gateway as TypeScript Gateway
-    participant Cache as Redis Cache
-    participant Queue as Redis Queue
-    participant Worker as Python Worker
-    participant Storage as Object Storage
-    participant VDB as Vector Database
-
-    %% Ingestion Flow
-    Note over Client, VDB: Asynchronous Document Ingestion Flow
-    Client->>Gateway: POST /api/v1/ingest (Document Payload)
-    Gateway->>Queue: Enqueue document processing task
-    Gateway-->>Client: 202 Accepted
-
-    Queue->>Worker: Consume ingestion task
-    Worker->>Storage: Persist raw artifact
-    Worker->>Worker: Chunk content & compute idempotency hash
-    Worker->>VDB: Generate vector embeddings & upsert chunks
-
-    %% Retrieval Flow
-    Note over Client, VDB: Hybrid Retrieval & Generation Flow
-    Client->>Gateway: POST /api/v1/query (User Prompt)
-    Gateway->>Cache: Query semantic similarity cache
-    alt Cache Hit
-        Cache-->>Gateway: Return matched historical completion
-        Gateway-->>Client: 200 OK (Cached Response)
-    else Cache Miss
-        Gateway->>Worker: Dispatch retrieval/generation execution
-        Worker->>VDB: Execute hybrid search (Dense + Sparse context)
-        VDB-->>Worker: Return top-k relevant document chunks
-        Worker->>Worker: Prompt template assembly & LLM execution
-        Worker->>Cache: Store generated completion in cache
-        Worker-->>Gateway: Return payload
-        Gateway-->>Client: 200 OK (Generated Response)
-    end
-```
-
----
-
-## Installation & Setup
-
-Since the project operates on a local-first philosophy, the entire distributed architecture can be brought up locally using Docker Compose.
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) and Docker Compose installed.
-- [Git](https://git-scm.com/) installed.
-
-### Local Deployment
-
-1. Clone the repository:
+1. Copy env file:
 
    ```bash
-   git clone https://github.com/your-org/cloud-rag.git
-   cd cloud-rag
+   cp .env.example .env
    ```
 
-2. Start the fully-orchestrated local environment:
+2. Install service dependencies:
 
    ```bash
-   docker compose up --build -d
+   just setup
    ```
 
-3. Verify service health metrics and standard open ports:
-   - **Frontend UI:** `http://localhost:5173`
-   - **API Gateway:** `http://localhost:3000`
-   - **MinIO Console:** `http://localhost:9001`
-   - **Vector DB Dashboard:** `http://localhost:6333`
+3. Start infrastructure only (Redis, PostgreSQL, MinIO, Qdrant):
 
----
+   ```bash
+   just up
+   ```
 
-## Usage Examples
+4. Check runtime status and health:
 
-### 1. Ingesting a Document via API
+   ```bash
+   just ps
+   just health
+   ```
 
-Submit an unstructured document to be processed asynchronously by the background workers.
+5. Stop infrastructure:
 
-```bash
-curl -X POST http://localhost:3000/api/v1/ingest \
-  -H "Content-Type: application/json" \
-  -d '{
-    "source_id": "doc-001",
-    "content": "Retrieval-Augmented Generation bridges internal data sources with foundational LLMs."
-  }'
-```
+   ```bash
+   just down
+   ```
 
-**Response:**
+## Commands
 
-```json
-{
-  "status": "queued",
-  "task_id": "job_987654321",
-  "message": "Document ingestion accepted for processing."
-}
-```
+| Command | Purpose |
+| :-- | :-- |
+| `just up` | Start Redis, PostgreSQL, MinIO, and Qdrant |
+| `just down` | Stop infrastructure |
+| `just nuke` | Stop infrastructure and delete volumes |
+| `just ps` | Show infra state and scaffold state |
+| `just health` | Validate service health + credential checks |
+| `just setup` | Install worker/gateway/frontend dependencies |
+| `just test` | Run isolated frontend, gateway, and worker tests |
 
-### 2. Querying the Knowledge Base via API
+## Baseline Service Ports
 
-Execute a context-aware generation query utilizing the hybrid RAG architecture.
+- Frontend: `5173`
+- Gateway: `3000`
+- Redis: `6379`
+- PostgreSQL: `5432`
+- MinIO API: `9000`
+- MinIO Console: `9001`
+- Qdrant HTTP: `6333`
 
-```bash
-curl -X POST http://localhost:3000/api/v1/query \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "How does RAG utilize internal data sources?"
-  }'
-```
-
-**Response:**
-
-```json
-{
-  "answer": "Retrieval-Augmented Generation bridges internal data sources with foundational LLMs to provide relevant and specific context for generation.",
-  "cached": false,
-  "sources": ["doc-001"]
-}
-```
+All ports, credentials, and connection values are configurable in `.env` and documented in `.env.example`.

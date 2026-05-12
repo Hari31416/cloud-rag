@@ -1,0 +1,8 @@
+README.md
+pyproject.toml
+src/cloudrag_workers.egg-info/PKG-INFO
+src/cloudrag_workers.egg-info/SOURCES.txt
+src/cloudrag_workers.egg-info/dependency_links.txt
+src/cloudrag_workers.egg-info/top_level.txt
+src/workers/__init__.py
+tests/test_smoke.py

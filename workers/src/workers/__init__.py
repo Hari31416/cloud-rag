@@ -1,0 +1,1 @@
+"""CloudRAG worker package scaffold."""
