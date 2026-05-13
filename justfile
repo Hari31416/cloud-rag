@@ -65,13 +65,21 @@ worker-start: prepare-run-dir
   else echo 'workers/pyproject.toml not found; skipping'; fi
 
 frontend-stop:
-  @if [ -f {{run_dir}}/frontend.pid ]; then kill "$$(cat {{run_dir}}/frontend.pid)" 2>/dev/null || true; rm -f {{run_dir}}/frontend.pid; fi
+  @echo "Stopping frontend on port ${FRONTEND_PORT:-5173}..."
+  @lsof -ti :${FRONTEND_PORT:-5173} | xargs kill -9 2>/dev/null || true
+  @rm -f .run/frontend.pid
+  @echo "Frontend stopped."
 
 gateway-stop:
-  @if [ -f {{run_dir}}/gateway.pid ]; then kill "$$(cat {{run_dir}}/gateway.pid)" 2>/dev/null || true; rm -f {{run_dir}}/gateway.pid; fi
+  @echo "Stopping gateway on port ${GATEWAY_PORT:-3000}..."
+  @lsof -ti :${GATEWAY_PORT:-3000} | xargs kill -9 2>/dev/null || true
+  @rm -f .run/gateway.pid
+  @echo "Gateway stopped."
 
 worker-stop:
-  @if [ -f {{run_dir}}/worker.pid ]; then kill "$$(cat {{run_dir}}/worker.pid)" 2>/dev/null || true; rm -f {{run_dir}}/worker.pid; fi
+  @pgrep -f 'python -m workers' | xargs kill -9 2>/dev/null || true
+  @rm -f .run/worker.pid
+  @echo "Worker stopped."
 
 logs-frontend:
   @if [ -f {{run_dir}}/frontend.log ]; then tail -n 100 -f {{run_dir}}/frontend.log; else echo 'frontend log not found'; fi

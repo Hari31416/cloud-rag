@@ -58,4 +58,3 @@ class S3ObjectStorage:
             ContentType=content_type,
         )
         return object_key
-
