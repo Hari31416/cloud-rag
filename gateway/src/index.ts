@@ -22,7 +22,7 @@ const app = createApp({
   logger,
 })
 
-serve(
+const server = serve(
   {
     fetch: app.fetch,
     port: config.GATEWAY_PORT,
@@ -40,9 +40,13 @@ serve(
 
 for (const signal of ['SIGINT', 'SIGTERM'] as const) {
   process.on(signal, async () => {
-    await queue.close()
-    await redis.quit()
-    await telemetry?.shutdown()
+    try {
+      server.close()
+      await Promise.race([
+        Promise.all([queue.close(), redis.quit(), telemetry?.shutdown()]),
+        new Promise(resolve => setTimeout(resolve, 1000)),
+      ])
+    } catch (_) {}
     process.exit(0)
   })
 }

@@ -22,3 +22,4 @@ TypeScript gateway implementation using Hono, BullMQ, Redis exact-cache lookup, 
 - Queue envelopes are versioned as `v1`.
 - The gateway returns `202 Accepted` for ingestion and keeps the route stateless.
 - Query execution is dispatched through BullMQ and waits on worker completion for the synchronous response path.
+- Cross-Origin Resource Sharing (CORS) is configured dynamically via the `CORS_ORIGIN` environment variable (defaults to `http://localhost:5173`).

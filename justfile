@@ -72,6 +72,7 @@ frontend-stop:
 
 gateway-stop:
   @echo "Stopping gateway on port ${GATEWAY_PORT:-3000}..."
+  @pgrep -f 'tsx watch src/index.ts' | xargs kill -9 2>/dev/null || true
   @lsof -ti :${GATEWAY_PORT:-3000} | xargs kill -9 2>/dev/null || true
   @rm -f .run/gateway.pid
   @echo "Gateway stopped."

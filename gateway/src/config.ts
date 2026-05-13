@@ -5,6 +5,7 @@ import { defaultEmbeddingModel, promptTemplateVersion, queueName } from './contr
 const configSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   GATEWAY_PORT: z.coerce.number().int().positive().default(3000),
+  CORS_ORIGIN: z.string().min(1).default('http://localhost:5173'),
   REDIS_URL: z.string().min(1).default('redis://localhost:6379/0'),
   REDIS_PASSWORD: z.string().optional(),
   GATEWAY_QUEUE_NAME: z.string().min(1).default(queueName),

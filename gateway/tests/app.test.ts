@@ -191,3 +191,19 @@ test('POST /api/v1/query dispatches worker job on cache miss', async () => {
   const payload = await response.json()
   assert.equal(payload.answer, 'Answer from worker')
 })
+
+test('OPTIONS request returns valid CORS headers', async () => {
+  const app = createTestApp(new FakeQueue(), new FakeCache())
+  const response = await app.request('/api/v1/query', {
+    method: 'OPTIONS',
+    headers: {
+      origin: 'http://localhost:5173',
+      'access-control-request-method': 'POST',
+    },
+  })
+
+  assert.equal(response.status, 204)
+  assert.equal(response.headers.get('access-control-allow-origin'), 'http://localhost:5173')
+  assert.equal(response.headers.get('access-control-allow-credentials'), 'true')
+})
+

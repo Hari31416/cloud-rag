@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { ZodError } from 'zod'
 
 import {
@@ -32,6 +33,25 @@ export interface AppDependencies {
 
 export function createApp(deps: AppDependencies) {
   const app = new Hono<{ Variables: AppVariables }>()
+
+  app.use(
+    '*',
+    cors({
+      origin: origin => {
+        const allowedOrigins = deps.config.CORS_ORIGIN.split(',').map(o => o.trim())
+        if (!origin) return allowedOrigins[0]
+        if (allowedOrigins.includes('*') || allowedOrigins.includes(origin)) {
+          return origin
+        }
+        return allowedOrigins[0]
+      },
+      credentials: true,
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      allowHeaders: ['Content-Type', 'Authorization', 'X-Request-Id', 'Traceparent', 'X-Requested-With'],
+      exposeHeaders: ['X-Request-Id', 'X-Trace-Id', 'Traceparent'],
+    }),
+  )
+
   app.use('*', requestContextMiddleware)
 
   app.get('/health', c => {
@@ -64,7 +84,7 @@ export function createApp(deps: AppDependencies) {
     const body = ingestRequestSchema.parse(await c.req.json())
     const sourceId = body.sourceId ?? `src_${randomUUID()}`
     const documentHash = computeDocumentHash(body.content)
-    const jobId = `${sourceId}:${documentHash}`
+    const jobId = `${sourceId}-${documentHash}`
 
     const taskId = await deps.queue.enqueueIngest(
       {
@@ -154,7 +174,7 @@ export function createApp(deps: AppDependencies) {
           submittedAt: new Date().toISOString(),
         },
       },
-      `${requestId}:query`,
+      `${requestId}-query`,
       deps.config.GATEWAY_QUERY_TIMEOUT_MS,
     )
 

@@ -25,7 +25,7 @@ Returns `202 Accepted`:
 ```json
 {
   "status": "accepted",
-  "taskId": "source-id:document-hash",
+  "taskId": "source-id-document-hash",
   "sourceId": "source-id",
   "documentHash": "sha256",
   "queue": "cloudrag-jobs",

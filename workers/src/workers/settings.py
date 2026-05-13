@@ -10,7 +10,9 @@ from .contracts import DEFAULT_EMBEDDING_MODEL, PROMPT_TEMPLATE_VERSION
 
 
 class WorkerSettings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
+    model_config = SettingsConfigDict(
+        env_file=("../.env", ".env"), env_file_encoding="utf-8", extra="ignore"
+    )
 
     service_name: str = Field(default="cloudrag-workers", alias="OTEL_SERVICE_NAME")
     log_level: str = Field(default="info", alias="LOG_LEVEL")
