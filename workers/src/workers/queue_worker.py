@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import signal
+from urllib.parse import urlparse
 
 from bullmq import Worker
 
@@ -33,11 +34,20 @@ async def run_worker(settings: WorkerSettings) -> None:
             return result.model_dump(mode="json", by_alias=True)
         raise ValueError(f"Unsupported job name: {job.name}")
 
+    parsed = urlparse(settings.redis_url)
+    connection_opts = {
+        "host": parsed.hostname or "localhost",
+        "port": parsed.port or 6379,
+        "db": int(parsed.path.lstrip("/")) if parsed.path.lstrip("/") else 0,
+    }
+    if parsed.password:
+        connection_opts["password"] = parsed.password
+
     worker = Worker(
         settings.queue_name,
         processor,
         {
-            "connection": {"url": settings.redis_url},
+            "connection": connection_opts,
             "concurrency": 10,
         },
     )

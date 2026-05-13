@@ -4,7 +4,7 @@ CloudRAG is a modular, cloud-agnostic Retrieval-Augmented Generation stack with 
 
 ## Status
 
-Phases 1 through 5, 7, and 8 are implemented. Phase 6 frontend product work is intentionally deferred.
+Phases 1 through 8 are fully implemented, including the operational desktop-first Phase 6 frontend interface.
 
 ## Repository Structure
 
@@ -65,6 +65,7 @@ Phases 1 through 5, 7, and 8 are implemented. Phase 6 frontend product work is i
 6. Run service tests:
 
    ```bash
+   just frontend-test
    just gateway-test
    just worker-test
    ```

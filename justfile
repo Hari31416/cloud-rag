@@ -49,19 +49,19 @@ prepare-run-dir:
 frontend-start: prepare-run-dir
   @if [ -f frontend/package.json ]; then \
     if [ -f {{run_dir}}/frontend.pid ] && kill -0 "$$(cat {{run_dir}}/frontend.pid)" 2>/dev/null; then echo 'frontend already running'; \
-    else cd frontend && nohup pnpm run dev > ../{{run_dir}}/frontend.log 2>&1 & echo $$! > ../{{run_dir}}/frontend.pid; fi; \
+    else { cd frontend && mkdir -p ../{{run_dir}} && nohup pnpm run dev > ../{{run_dir}}/frontend.log 2>&1 & } && echo $$! > {{run_dir}}/frontend.pid; fi; \
   else echo 'frontend/package.json not found; skipping'; fi
 
 gateway-start: prepare-run-dir
   @if [ -f gateway/package.json ]; then \
     if [ -f {{run_dir}}/gateway.pid ] && kill -0 "$$(cat {{run_dir}}/gateway.pid)" 2>/dev/null; then echo 'gateway already running'; \
-    else cd gateway && nohup pnpm run dev > ../{{run_dir}}/gateway.log 2>&1 & echo $$! > ../{{run_dir}}/gateway.pid; fi; \
+    else { cd gateway && mkdir -p ../{{run_dir}} && nohup pnpm run dev > ../{{run_dir}}/gateway.log 2>&1 & } && echo $$! > {{run_dir}}/gateway.pid; fi; \
   else echo 'gateway/package.json not found; skipping'; fi
 
 worker-start: prepare-run-dir
   @if [ -f workers/pyproject.toml ]; then \
     if [ -f {{run_dir}}/worker.pid ] && kill -0 "$$(cat {{run_dir}}/worker.pid)" 2>/dev/null; then echo 'worker already running'; \
-    else cd workers && nohup .venv/bin/python -m workers > ../{{run_dir}}/worker.log 2>&1 & echo $$! > ../{{run_dir}}/worker.pid; fi; \
+    else { cd workers && mkdir -p ../{{run_dir}} && nohup .venv/bin/python -m workers > ../{{run_dir}}/worker.log 2>&1 & } && echo $$! > {{run_dir}}/worker.pid; fi; \
   else echo 'workers/pyproject.toml not found; skipping'; fi
 
 frontend-stop:
