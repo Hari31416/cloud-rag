@@ -27,4 +27,3 @@ def configure_logging(level: str) -> None:
 
 def get_logger():
     return structlog.get_logger("cloudrag-workers")
-

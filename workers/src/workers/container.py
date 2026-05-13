@@ -21,18 +21,21 @@ class ServiceContainer:
 
 def build_container(settings: WorkerSettings) -> ServiceContainer:
     logger = get_logger()
-    embeddings: EmbeddingAdapter
-    if settings.embedding_model == "deterministic-hash-v1":
-        embeddings = DeterministicEmbeddingAdapter(settings.dense_dimensions)
-    else:
-        embeddings = LiteLLMEmbeddingAdapter(settings.embedding_model)
-
     if settings.runtime_backend == "memory":
+        embeddings: EmbeddingAdapter = DeterministicEmbeddingAdapter(settings.dense_dimensions)
         object_storage: ObjectStorage = MemoryObjectStorage()
         vector_store: VectorStore = MemoryVectorStore()
         cache: SemanticCache = MemorySemanticCache()
         logger.info("worker runtime configured", backend="memory")
+        answer_generator = ExtractiveAnswerGenerator()
     else:
+        embeddings = LiteLLMEmbeddingAdapter(
+            model=settings.embedding_model,
+            dimensions=settings.dense_dimensions,
+            batch_size=settings.embedding_batch_size,
+            api_key=settings.embedding_api_key,
+            api_base=settings.embedding_api_base_url,
+        )
         object_storage = S3ObjectStorage(
             endpoint_url=settings.s3_endpoint,
             region_name=settings.s3_region,
@@ -49,12 +52,16 @@ def build_container(settings: WorkerSettings) -> ServiceContainer:
         )
         cache = RedisSemanticCache(settings.redis_url)
         logger.info("worker runtime configured", backend="services")
-
-    answer_generator = (
-        LiteLLMAnswerGenerator(settings.llm_model, settings.prompt_template_version)
-        if settings.llm_model
-        else ExtractiveAnswerGenerator()
-    )
+        answer_generator = (
+            LiteLLMAnswerGenerator(
+                model=settings.llm_model,
+                prompt_template_version=settings.prompt_template_version,
+                api_key=settings.llm_api_key,
+                api_base=settings.llm_api_base_url,
+            )
+            if settings.llm_model
+            else ExtractiveAnswerGenerator()
+        )
     return ServiceContainer(
         ingestion_service=IngestionService(
             storage=object_storage,
@@ -75,4 +82,3 @@ def build_container(settings: WorkerSettings) -> ServiceContainer:
         ),
         vector_store=vector_store,
     )
-

@@ -14,6 +14,49 @@ from .settings import WorkerSettings
 
 async def run_worker(settings: WorkerSettings) -> None:
     logger = get_logger()
+
+    from redis import asyncio as redis_async
+    from redis.exceptions import AuthenticationError, ConnectionError as RedisConnectionError
+
+    logger.info("verifying redis connection", redis_url=settings.redis_url)
+    max_attempts = 15
+    for attempt in range(1, max_attempts + 1):
+        client = redis_async.from_url(settings.redis_url)
+        try:
+            await client.ping()
+            logger.info("redis connection established successfully")
+            await client.close()
+            break
+        except AuthenticationError as auth_err:
+            await client.close()
+            if "without any password configured" in str(auth_err):
+                logger.warning(
+                    "redis server does not require authentication; stripping password from configuration"
+                )
+                parsed = urlparse(settings.redis_url)
+                netloc = (
+                    f"{parsed.hostname}:{parsed.port}"
+                    if parsed.port
+                    else (parsed.hostname or "localhost")
+                )
+                settings.redis_url = parsed._replace(netloc=netloc).geturl()
+                unauth_client = redis_async.from_url(settings.redis_url)
+                try:
+                    await unauth_client.ping()
+                    logger.info("unauthenticated redis connection established successfully")
+                finally:
+                    await unauth_client.close()
+                break
+            logger.error("redis authentication failed", error=str(auth_err))
+            raise
+        except (RedisConnectionError, OSError) as conn_err:
+            await client.close()
+            if attempt == max_attempts:
+                logger.error("redis connection timed out", attempts=attempt)
+                raise
+            logger.debug("redis not ready, retrying...", attempt=attempt, error=str(conn_err))
+            await asyncio.sleep(1.0)
+
     container = build_container(settings)
 
     async def processor(job, job_token):

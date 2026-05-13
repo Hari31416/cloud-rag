@@ -12,7 +12,9 @@ class ChunkDraft:
     content: str
 
 
-def split_text(text: str, source_id: str, document_hash: str, chunk_size: int, chunk_overlap: int) -> list[ChunkDraft]:
+def split_text(
+    text: str, source_id: str, document_hash: str, chunk_size: int, chunk_overlap: int
+) -> list[ChunkDraft]:
     cleaned = text.strip()
     if not cleaned:
         return []
@@ -39,4 +41,3 @@ def split_text(text: str, source_id: str, document_hash: str, chunk_size: int, c
             end = start + step
         start = max(end - chunk_overlap, start + step)
     return chunks
-

@@ -125,7 +125,7 @@ Job names:
     "useCache": true,
     "cacheKey": "semantic-cache:v1:...",
     "collectionName": "cloudrag-documents",
-    "embeddingModel": "deterministic-hash-v1",
+    "embeddingModel": "text-embedding-3-small",
     "promptTemplateVersion": "2026-05-12",
     "submittedAt": "2026-05-12T12:00:00Z"
   }

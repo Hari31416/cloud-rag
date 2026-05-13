@@ -17,7 +17,7 @@ install-uv:
   @if command -v uv >/dev/null 2>&1; then uv --version; else echo 'Install uv from https://docs.astral.sh/uv/getting-started/installation/'; exit 1; fi
 
 up: ensure-env
-  @{{compose}} up -d redis postgres minio qdrant
+  @{{compose}} up --wait redis postgres minio qdrant
 
 down: ensure-env
   @{{compose}} down --remove-orphans

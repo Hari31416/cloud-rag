@@ -126,4 +126,3 @@ class RedisSemanticCache:
 
     def _index_key(self) -> str:
         return f"{self.namespace}:index"
-

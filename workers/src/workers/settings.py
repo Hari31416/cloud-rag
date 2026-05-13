@@ -23,7 +23,7 @@ class WorkerSettings(BaseSettings):
     )
     chunk_size: int = Field(default=800, alias="CHUNK_SIZE")
     chunk_overlap: int = Field(default=120, alias="CHUNK_OVERLAP")
-    dense_dimensions: int = Field(default=64, alias="DENSE_VECTOR_DIMENSIONS")
+    dense_dimensions: int = Field(default=1536, alias="DENSE_VECTOR_DIMENSIONS")
     sparse_dimensions: int = Field(default=2048, alias="SPARSE_VECTOR_DIMENSIONS")
     semantic_cache_ttl_seconds: int = Field(default=3600, alias="SEMANTIC_CACHE_TTL_SECONDS")
     semantic_cache_threshold: float = Field(default=0.92, alias="SEMANTIC_CACHE_THRESHOLD")
@@ -39,7 +39,12 @@ class WorkerSettings(BaseSettings):
     )
     s3_force_path_style: bool = Field(default=True, alias="S3_FORCE_PATH_STYLE")
     embedding_model: str = Field(default=DEFAULT_EMBEDDING_MODEL, alias="EMBEDDING_MODEL")
-    llm_model: str | None = Field(default=None, alias="LLM_MODEL")
+    embedding_api_key: str | None = Field(default=None, alias="EMBEDDING_API_KEY")
+    embedding_api_base_url: str | None = Field(default=None, alias="EMBEDDING_API_BASE_URL")
+    embedding_batch_size: int = Field(default=64, alias="EMBEDDING_BATCH_SIZE")
+    llm_model: str | None = Field(default="gpt-4.1-mini", alias="LLM_MODEL")
+    llm_api_key: str | None = Field(default=None, alias="LLM_API_KEY")
+    llm_api_base_url: str | None = Field(default=None, alias="LLM_API_BASE_URL")
     prompt_template_version: str = Field(
         default=PROMPT_TEMPLATE_VERSION, alias="PROMPT_TEMPLATE_VERSION"
     )

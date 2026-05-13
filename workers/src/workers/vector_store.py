@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import UTC, datetime
-from typing import Protocol
-
-import httpx
+from datetime import UTC
+from typing import Any, Protocol
 
 from .contracts import ChunkRecord, SourceReference
 from .hashing import cosine_similarity, sparse_dot
@@ -105,53 +103,58 @@ class QdrantVectorStore:
         collection_name: str,
         dense_dimensions: int,
     ) -> None:
+        from qdrant_client import AsyncQdrantClient
+        from qdrant_client.http import models
+
         self.collection_name = collection_name
         self.dense_dimensions = dense_dimensions
-        headers = {"api-key": api_key} if api_key else None
-        self.client = httpx.AsyncClient(base_url=base_url.rstrip("/"), headers=headers, timeout=20.0)
+        self.models = models
+        self.client = AsyncQdrantClient(
+            url=base_url.rstrip("/"),
+            api_key=api_key,
+            timeout=20.0,
+        )
 
     async def ensure_schema(self) -> None:
-        response = await self.client.get(f"/collections/{self.collection_name}")
-        if response.status_code == 200:
+        exists = await self.client.collection_exists(self.collection_name)
+        if exists:
             return
-        response = await self.client.put(
-            f"/collections/{self.collection_name}",
-            json={
-                "vectors": {
-                    "dense": {
-                        "size": self.dense_dimensions,
-                        "distance": "Cosine",
-                    }
-                },
-                "sparse_vectors": {
-                    "sparse": {},
-                },
+
+        await self.client.create_collection(
+            collection_name=self.collection_name,
+            vectors_config={
+                "dense": self.models.VectorParams(
+                    size=self.dense_dimensions,
+                    distance=self.models.Distance.COSINE,
+                )
             },
+            sparse_vectors_config={"sparse": self.models.SparseVectorParams()},
         )
-        response.raise_for_status()
+        for field_name in ("source_id", "chunk_id", "document_hash"):
+            await self.client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name=field_name,
+                field_schema=self.models.PayloadSchemaType.KEYWORD,
+            )
 
     async def existing_chunk_count(self, chunk_ids: list[str]) -> int:
         if not chunk_ids:
             return 0
-        response = await self.client.post(
-            f"/collections/{self.collection_name}/points",
-            json={
-                "ids": chunk_ids,
-                "with_payload": False,
-                "with_vector": False,
-            },
+        points = await self.client.retrieve(
+            collection_name=self.collection_name,
+            ids=chunk_ids,
+            with_payload=False,
+            with_vectors=False,
         )
-        response.raise_for_status()
-        result = response.json().get("result", [])
-        return len(result)
+        return len(points)
 
     async def upsert_chunks(self, chunks: list[ChunkRecord]) -> None:
-        points = []
+        points: list[Any] = []
         for chunk in chunks:
             points.append(
-                {
-                    "id": chunk.chunk_id,
-                    "payload": {
+                self.models.PointStruct(
+                    id=chunk.chunk_id,
+                    payload={
                         "source_id": chunk.source_id,
                         "chunk_id": chunk.chunk_id,
                         "chunk_hash": chunk.chunk_hash,
@@ -162,22 +165,19 @@ class QdrantVectorStore:
                         "created_at": chunk.created_at.astimezone(UTC).isoformat(),
                         "metadata": chunk.metadata,
                     },
-                    "vector": {
+                    vector={
                         "dense": chunk.dense_vector,
-                        "sparse": {
-                            "indices": list(chunk.sparse_vector.keys()),
-                            "values": list(chunk.sparse_vector.values()),
-                        },
+                        "sparse": self.models.SparseVector(
+                            indices=list(chunk.sparse_vector.keys()),
+                            values=list(chunk.sparse_vector.values()),
+                        ),
                     },
-                }
+                )
             )
-        response = await self.client.put(
-            f"/collections/{self.collection_name}/points",
-            json={
-                "points": points,
-            },
+        await self.client.upsert(
+            collection_name=self.collection_name,
+            points=points,
         )
-        response.raise_for_status()
 
     async def hybrid_search(
         self,
@@ -186,38 +186,39 @@ class QdrantVectorStore:
         top_k: int,
         min_score: float,
     ) -> list[SourceReference]:
-        response = await self.client.post(
-            f"/collections/{self.collection_name}/points/query",
-            json={
-                "prefetch": [
-                    {
-                        "query": dense_vector,
-                        "using": "dense",
-                        "limit": max(top_k * 4, 8),
-                    },
-                    {
-                        "query": {
-                            "indices": list(sparse_vector.keys()),
-                            "values": list(sparse_vector.values()),
-                        },
-                        "using": "sparse",
-                        "limit": max(top_k * 4, 8),
-                    },
-                ],
-                "query": {"fusion": "rrf"},
-                "with_payload": True,
-                "limit": top_k,
-            },
+        prefetch = [
+            self.models.Prefetch(
+                query=dense_vector,
+                using="dense",
+                limit=max(top_k * 4, 8),
+            )
+        ]
+        if sparse_vector:
+            prefetch.append(
+                self.models.Prefetch(
+                    query=self.models.SparseVector(
+                        indices=list(sparse_vector.keys()),
+                        values=list(sparse_vector.values()),
+                    ),
+                    using="sparse",
+                    limit=max(top_k * 4, 8),
+                )
+            )
+
+        response = await self.client.query_points(
+            collection_name=self.collection_name,
+            prefetch=prefetch,
+            query=self.models.FusionQuery(fusion=self.models.Fusion.RRF),
+            with_payload=True,
+            limit=top_k,
         )
-        response.raise_for_status()
-        result = response.json().get("result", {})
-        points = result.get("points", result if isinstance(result, list) else [])
+        points = getattr(response, "points", response)
         matches: list[SourceReference] = []
         for point in points:
-            score = float(point.get("score", 0.0))
+            score = float(getattr(point, "score", 0.0))
             if score < min_score:
                 continue
-            payload = point.get("payload", {})
+            payload = getattr(point, "payload", {}) or {}
             matches.append(
                 SourceReference(
                     sourceId=payload["source_id"],
@@ -232,5 +233,6 @@ class QdrantVectorStore:
         return matches
 
     async def close(self) -> None:
-        await self.client.aclose()
-
+        close = getattr(self.client, "close", None) or getattr(self.client, "aclose", None)
+        if callable(close):
+            await close()

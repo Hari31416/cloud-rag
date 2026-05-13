@@ -6,7 +6,6 @@ import math
 import re
 from collections import Counter
 
-
 TOKEN_RE = re.compile(r"[A-Za-z0-9]+")
 
 
@@ -77,4 +76,3 @@ def sparse_dot(left: dict[int, float], right: dict[int, float]) -> float:
 
 def stable_json(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"))
-

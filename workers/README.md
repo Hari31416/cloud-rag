@@ -15,6 +15,8 @@ Python worker implementation managed by `uv`, with BullMQ queue consumption, ide
 
 ## Notes
 
-- Deterministic hash embeddings are the default local embedding path.
-- Setting `EMBEDDING_MODEL` switches the embedding adapter to LiteLLM.
-- Setting `LLM_MODEL` switches answer generation from extractive fallback to LiteLLM completion.
+- `WORKER_RUNTIME_BACKEND=services` uses provider-backed embeddings, S3-compatible object storage, Redis semantic cache, and Qdrant.
+- `EMBEDDING_MODEL`, `EMBEDDING_API_KEY`, and `EMBEDDING_API_BASE_URL` control cloud embedding generation.
+- `LLM_MODEL`, `LLM_API_KEY`, and `LLM_API_BASE_URL` control answer generation.
+- `WORKER_RUNTIME_BACKEND=memory` keeps deterministic embeddings and extractive answers for tests only.
+- Redis connections are automatically verified on startup, supporting graceful fallback if the target server runs unauthenticated.

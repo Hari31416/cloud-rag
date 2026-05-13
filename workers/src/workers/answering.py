@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Protocol
 
 from .contracts import SourceReference
+from .llm_utils import text_completion
 
 
 class AnswerGenerator(Protocol):
@@ -22,24 +23,38 @@ class ExtractiveAnswerGenerator:
 
 
 class LiteLLMAnswerGenerator:
-    def __init__(self, model: str, prompt_template_version: str) -> None:
+    def __init__(
+        self,
+        model: str,
+        prompt_template_version: str,
+        api_key: str | None = None,
+        api_base: str | None = None,
+    ) -> None:
         self.model = model
         self.prompt_template_version = prompt_template_version
+        self.api_key = api_key
+        self.api_base = api_base
 
     async def generate_answer(self, prompt: str, sources: list[SourceReference]) -> str:
-        from litellm import acompletion
+        if not sources:
+            return "I could not find supporting content for that question in the ingested corpus."
 
         context = "\n\n".join(
-            f"Source {index + 1} ({source.source_id}/{source.chunk_id}): {source.content}"
+            f"Source {index + 1} [{source.source_id}/{source.chunk_id}]\n"
+            f"Title: {source.title or 'Untitled'}\n"
+            f"Content: {source.content}"
             for index, source in enumerate(sources[:5])
         )
-        response = await acompletion(
+        return await text_completion(
             model=self.model,
             messages=[
                 {
                     "role": "system",
                     "content": (
-                        "Answer using the provided sources only. "
+                        "You are a retrieval-augmented assistant. "
+                        "Answer using only the provided sources. "
+                        "If the sources are insufficient, say that clearly. "
+                        "Cite factual claims inline using [source_id/chunk_id]. "
                         f"Prompt template version: {self.prompt_template_version}."
                     ),
                 },
@@ -48,6 +63,6 @@ class LiteLLMAnswerGenerator:
                     "content": f"Question:\n{prompt}\n\nSources:\n{context}",
                 },
             ],
+            api_key=self.api_key,
+            api_base=self.api_base,
         )
-        return response["choices"][0]["message"]["content"]
-

@@ -137,7 +137,8 @@ async def test_query_results_include_citations() -> None:
             "payload": {
                 "sourceId": "source-9",
                 "title": "Architecture",
-                "content": "CloudRAG stores documents in object storage and vectors in Qdrant. " * 15,
+                "content": "CloudRAG stores documents in object storage and vectors in Qdrant. "
+                * 15,
                 "contentType": "text/plain",
                 "metadata": {"layer": "worker"},
                 "storage": {"kind": "inline"},

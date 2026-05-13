@@ -13,4 +13,3 @@ def configure_telemetry(service_name: str, disabled: bool) -> None:
     provider = TracerProvider(resource=Resource.create({"service.name": service_name}))
     provider.add_span_processor(BatchSpanProcessor(ConsoleSpanExporter()))
     trace.set_tracer_provider(provider)
-

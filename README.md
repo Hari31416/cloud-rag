@@ -108,5 +108,5 @@ All ports, credentials, and connection values are configurable in `.env` and doc
 
 - The gateway exposes `POST /api/v1/ingest` and `POST /api/v1/query`.
 - Queue contracts are versioned and documented in [docs/contracts.md](/Users/hari/Desktop/sandbox/cloud-rag/docs/contracts.md).
-- The worker handles idempotent chunking, deterministic local embeddings by default, Qdrant hybrid retrieval, Redis semantic cache evaluation, and optional LiteLLM-backed embeddings and generation.
+- The worker handles idempotent chunking, provider-backed cloud embeddings, Qdrant hybrid retrieval, Redis semantic cache evaluation, and provider-backed answer generation.
 - Deployment guidance and environment profiles are documented in [docs/deployment-path.md](/Users/hari/Desktop/sandbox/cloud-rag/docs/deployment-path.md).

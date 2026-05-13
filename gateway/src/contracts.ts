@@ -5,7 +5,7 @@ import { z } from 'zod'
 export const contractVersion = 'v1' as const
 export const queueName = 'cloudrag-jobs'
 export const promptTemplateVersion = '2026-05-12'
-export const defaultEmbeddingModel = 'deterministic-hash-v1'
+export const defaultEmbeddingModel = 'text-embedding-3-small'
 
 export const sourceMetadataSchema = z.record(z.string(), z.string()).default({})
 

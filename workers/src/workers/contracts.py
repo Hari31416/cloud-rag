@@ -5,9 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-
 CONTRACT_VERSION = "v1"
-DEFAULT_EMBEDDING_MODEL = "deterministic-hash-v1"
+DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
 PROMPT_TEMPLATE_VERSION = "2026-05-12"
 
 
@@ -127,4 +126,3 @@ class SemanticCacheEntry(BaseModel):
     prompt_template_version: str
     response: QueryResult
     created_at: datetime
-
