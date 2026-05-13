@@ -143,6 +143,7 @@ export function createApp(deps: AppDependencies) {
     })
 
     if (body.useCache) {
+      const start = Date.now()
       const cached = await deps.cache.get(cacheKey)
       if (cached) {
         return c.json(
@@ -151,6 +152,10 @@ export function createApp(deps: AppDependencies) {
             cache: {
               ...cached.cache,
               hit: true,
+            },
+            retrieval: {
+              ...cached.retrieval,
+              tookMs: Math.max(1, Date.now() - start),
             },
             requestId,
             traceId,
